@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluation Marks Sheet — {{ review.review_name }}{% endblock %}
+{% block page_title %}{{ review.review_name }} — Evaluation Sheet{% endblock %}
+
+{% block topbar_actions %}
+    <a href="{{ url_for('reviews_list') }}" class="btn btn-outline-custom">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to Reviews
+    </a>
+    <a href="{{ url_for('download_report', format_type='excel', report_name='review_marks') }}" class="btn btn-outline-success">
+        <i class="fa-solid fa-file-excel me-1"></i> Download Excel
+    </a>
+    <a href="{{ url_for('download_report', format_type='pdf', report_name='review_marks') }}" class="btn btn-outline-danger">
+        <i class="fa-solid fa-file-pdf me-1"></i> Download PDF
+    </a>
+{% endblock %}
+
+{% block content %}
+<!-- Criteria Summary Card -->
+<div class="card-custom p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Evaluation Rubrics & Maximum Marks</h5>
+        <span class="badge bg-primary fs-6">Max Total: {{ review.max_total_marks }} Marks</span>
+    </div>
+    <div class="row g-3">
+        {% for c in criteria %}
+        <div class="col-md-3">
+            <div class="p-3 border rounded-3 bg-light">
+                <div class="text-muted small">Criterion {{ c.display_order }}</div>
+                <div class="fw-bold fs-6 mb-1">{{ c.criteria_name }}</div>
+                <div class="badge bg-white text-dark border">Max: {{ c.max_marks }} Marks</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Scheduled Teams for Evaluation -->
+<div class="card-custom">
+    <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-1">Teams Scheduled for Review</h5>
+            <p class="text-muted small mb-0">Assigned panel faculty can grade student teams, record feedback, and finalize marks</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-custom">
+            <thead>
+                <tr>
+                    <th>Team ID</th>
+                    <th>Panel</th>
+                    <th>Team Members</th>
+                    <th>Assigned Mentor</th>
+                    <th>Evaluation Status</th>
+                    <th>Total Score</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for team in teams %}
+                <tr>
+                    <td>
+                        <span class="badge-team-id fs-6">{{ team.team_id }}</span>
+                    </td>
+                    <td>
+                        <span class="badge-panel-id">{{ team.panel_id }}</span>
+                    </td>
+                    <td class="small">{{ team.members }}</td>
+                    <td>
+                        <span class="fw-semibold text-primary"><i class="fa-solid fa-user-tie me-1"></i> {{ team.mentor_name }}</span>
+                    </td>
+                    <td>
+                        {% if team.status == 'Completed' %}
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
+                                <i class="fa-solid fa-check-double me-1"></i> Completed
+                            </span>
+                        {% else %}
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">
+                                <i class="fa-solid fa-hourglass-start me-1"></i> Pending
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if team.total_score is not none %}
+                            <span class="fw-bold fs-6 text-primary">{{ team.total_score }} / {{ review.max_total_marks }}</span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-primary-custom" data-bs-toggle="modal" data-bs-target="#scoreModal{{ team.team_review_id }}">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> {% if team.status == 'Completed' %}Edit Marks{% else %}Enter Marks{% endif %}
+                        </button>
+                    </td>
+                </tr>
+
+                <!-- Scoring Modal for Each Team -->
+                <div class="modal fade" id="scoreModal{{ team.team_review_id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('submit_team_marks') }}">
+                                <input type="hidden" name="team_review_id" value="{{ team.team_review_id }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">
+                                        <i class="fa-solid fa-star text-warning me-2"></i> Review Evaluation: {{ team.team_id }}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="alert alert-light border small mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <span><b>Team:</b> {{ team.team_id }} ({{ team.members }})</span>
+                                            <span><b>Panel:</b> {{ team.panel_id }}</span>
+                                            <span><b>Mentor:</b> {{ team.mentor_name }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Evaluating Faculty Member</label>
+                                        <select name="faculty_id" class="form-select" required>
+                                            {% for f in faculty_list %}
+                                                <option value="{{ f.faculty_id }}">{{ f.name }} ({{ f.faculty_id }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <h6 class="fw-bold mb-3">Enter Marks per Evaluation Criterion:</h6>
+                                    {% for c in criteria %}
+                                    <div class="row align-items-center mb-3 p-2 border rounded-2 bg-light">
+                                        <div class="col-md-7">
+                                            <input type="hidden" name="criteria_id[]" value="{{ c.id }}">
+                                            <div class="fw-semibold">{{ c.criteria_name }}</div>
+                                            <div class="text-muted small">Maximum allowed: {{ c.max_marks }} marks</div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <div class="input-group">
+                                                <input type="number" step="0.5" min="0" max="{{ c.max_marks }}" name="marks[]" class="form-control score-input" placeholder="0 - {{ c.max_marks }}" required>
+                                                <span class="input-group-text">/ {{ c.max_marks }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Evaluator Comments & Feedback</label>
+                                        <textarea name="comments" class="form-control" rows="3" placeholder="Provide feedback on methodology, viva, and student demo...">{{ team.general_comments or '' }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary-custom">
+                                        <i class="fa-solid fa-check me-1"></i> Submit Marks & Finalize
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="empty-state py-5">
+                        <div class="empty-state-icon"><i class="fa-solid fa-pen-ruler"></i></div>
+                        <h6 class="empty-state-title">No Teams Scheduled For This Review</h6>
+                        <p class="empty-state-text">Allocate review panels to schedule teams for evaluation.</p>
+                        <a href="{{ url_for('review_panels') }}" class="btn btn-primary-custom">Allocate Panels</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

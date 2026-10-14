@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Student Directory — Smart Mini Project System{% endblock %}
+{% block page_title %}Student Directory{% endblock %}
+
+{% block topbar_actions %}
+    <button type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#uploadStudentModal">
+        <i class="fa-solid fa-file-arrow-up me-1"></i> Import Excel
+    </button>
+    <button type="button" class="btn btn-outline-custom" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+        <i class="fa-solid fa-user-plus me-1"></i> Add Student
+    </button>
+{% endblock %}
+
+{% block content %}
+<div class="card-custom">
+    <!-- Header with Filters & Search -->
+    <div class="p-4 border-bottom">
+        <div class="row g-3 align-items-center justify-content-between">
+            <div class="col-md-5">
+                <form method="GET" action="{{ url_for('students_list') }}" class="d-flex gap-2">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Search by student name..." value="{{ search }}">
+                    </div>
+                    {% if grade_filter %}<input type="hidden" name="grade" value="{{ grade_filter }}">{% endif %}
+                    <button type="submit" class="btn btn-outline-custom">Search</button>
+                    {% if search or grade_filter %}
+                        <a href="{{ url_for('students_list') }}" class="btn btn-outline-secondary" title="Reset Filters"><i class="fa-solid fa-xmark"></i></a>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Grade Category Pills Filter -->
+            <div class="col-md-7 d-flex justify-content-md-end gap-2 flex-wrap">
+                <a href="{{ url_for('students_list', search=search) }}" class="btn btn-sm {% if not grade_filter %}btn-dark{% else %}btn-outline-custom{% endif %}">
+                    All Students ({{ total_count }})
+                </a>
+                <a href="{{ url_for('students_list', grade='Grade A', search=search) }}" class="btn btn-sm {% if grade_filter == 'Grade A' %}btn-success{% else %}btn-outline-custom{% endif %}">
+                    Grade A ({{ grade_a_count }})
+                </a>
+                <a href="{{ url_for('students_list', grade='Grade B', search=search) }}" class="btn btn-sm {% if grade_filter == 'Grade B' %}btn-warning text-dark{% else %}btn-outline-custom{% endif %}">
+                    Grade B ({{ grade_b_count }})
+                </a>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-custom dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fa-solid fa-download me-1"></i> Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li><a class="dropdown-item" href="{{ url_for('download_report', format_type='excel', report_name='students') }}"><i class="fa-solid fa-file-excel text-success me-2"></i> Export to Excel</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('download_report', format_type='pdf', report_name='students') }}"><i class="fa-solid fa-file-pdf text-danger me-2"></i> Export to PDF</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Table (Displays Roll Number, Student Name, Grade Category, and Assigned Team - NO S.No) -->
+    <div class="table-responsive">
+        <table class="table table-custom">
+            <thead>
+                <tr>
+                    <th>Roll Number</th>
+                    <th>Student Name</th>
+                    <th>Grade Category</th>
+                    <th>Assigned Team</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>
+                        <span class="badge bg-light text-dark border fw-bold fs-6">{{ student.roll_number }}</span>
+                    </td>
+                    <td class="fw-semibold">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle bg-light text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 13px;">
+                                {{ (student.student_name or student.name)[:1] }}
+                            </div>
+                            <span>{{ student.student_name or student.name }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if student.grade_category == 'Grade A' %}
+                            <span class="badge-grade-a"><i class="fa-solid fa-star me-1"></i> Grade A</span>
+                        {% else %}
+                            <span class="badge-grade-b"><i class="fa-regular fa-star me-1"></i> Grade B</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if student.team_id != 'Not Assigned' %}
+                            <span class="badge-team-id">{{ student.team_id }}</span>
+                        {% else %}
+                            <span class="badge bg-light text-muted border">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-custom me-1" data-bs-toggle="modal" data-bs-target="#editStudentModal{{ student.id }}" title="Edit Student">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('delete_student', student_id=student.id) }}" class="d-inline" onsubmit="return confirm('Remove student {{ student.student_name or student.name }} ({{ student.roll_number }})?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Student">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+
+                <!-- Edit Modal -->
+                <div class="modal fade" id="editStudentModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('edit_student', student_id=student.id) }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Edit Student Details</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Roll Number</label>
+                                        <input type="text" name="roll_number" class="form-control" value="{{ student.roll_number }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Student Name</label>
+                                        <input type="text" name="student_name" class="form-control" value="{{ student.student_name or student.name }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Grade Category</label>
+                                        <select name="grade_category" class="form-select" required>
+                                            <option value="Grade A" {% if student.grade_category == 'Grade A' %}selected{% endif %}>Grade A</option>
+                                            <option value="Grade B" {% if student.grade_category == 'Grade B' %}selected{% endif %}>Grade B</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary-custom">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="empty-state py-5">
+                        <div class="empty-state-icon">
+                            <i class="fa-solid fa-user-graduate"></i>
+                        </div>
+                        <h6 class="empty-state-title">No Students Found</h6>
+                        <p class="empty-state-text">Import student details using the provided Excel file (e.g. <code>Project Category students.xlsx</code>) or add individual student records.</p>
+                        <button type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#uploadStudentModal">
+                            <i class="fa-solid fa-file-arrow-up me-1"></i> Upload Student Excel
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="p-3 border-top d-flex justify-content-between align-items-center">
+        <span class="small text-muted">Page {{ page }} of {{ total_pages }}</span>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('students_list', page=page-1, grade=grade_filter, search=search) }}">Previous</a>
+                </li>
+                {% for p in range(1, total_pages + 1) %}
+                <li class="page-item {% if p == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('students_list', page=p, grade=grade_filter, search=search) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('students_list', page=page+1, grade=grade_filter, search=search) }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Upload Student Excel Modal -->
+<div class="modal fade" id="uploadStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('upload_students') }}" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-file-excel text-success me-2"></i> Import Student Excel
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="fa-solid fa-circle-info me-1"></i> <b>Strict Formatting Rule:</b> Only student names are imported and displayed. Any <code>S.No</code> or serial number columns in the Excel file are automatically ignored.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Choose Excel File (.xlsx, .xls)</label>
+                        <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+                        <div class="form-text">Supports <code>Project Category students.xlsx</code> with Grade A & Grade B columns or standard student spreadsheets.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">
+                        <i class="fa-solid fa-upload me-1"></i> Upload and Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Single Student Modal (Roll Number, Student Name, Grade Category) -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('add_student') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-user-plus text-primary me-2"></i> Add Student
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Roll Number</label>
+                        <input type="text" name="roll_number" class="form-control" placeholder="e.g. 25ITR138" required autofocus>
+                        <div class="form-text">Unique student roll identifier.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Student Name</label>
+                        <input type="text" name="student_name" class="form-control" placeholder="Enter student full name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Grade Category</label>
+                        <select name="grade_category" class="form-select" required>
+                            <option value="Grade A">Grade A (High Academic Performance)</option>
+                            <option value="Grade B">Grade B (Standard Academic Performance)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

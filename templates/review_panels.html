@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}Review Panels & Allocations — Smart Mini Project System{% endblock %}
+{% block page_title %}Review Panels & Faculty Allocations (with Mentors){% endblock %}
+
+{% block topbar_actions %}
+    <button type="button" class="btn btn-outline-custom" data-bs-toggle="modal" data-bs-target="#createPanelModal">
+        <i class="fa-solid fa-plus me-1"></i> Create Panel
+    </button>
+    <button type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#allocatePanelsModal">
+        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Auto-Allocate Panels
+    </button>
+    <div class="dropdown d-inline-block">
+        <button class="btn btn-outline-custom dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="fa-solid fa-download me-1"></i> Export
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <li><a class="dropdown-item" href="{{ url_for('download_report', format_type='pdf', report_name='panels') }}"><i class="fa-solid fa-file-pdf text-danger me-2"></i> Export to PDF</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('download_report', format_type='excel', report_name='panels') }}"><i class="fa-solid fa-file-excel text-success me-2"></i> Export to Excel</a></li>
+        </ul>
+    </div>
+{% endblock %}
+
+{% block content %}
+<!-- Panels Grid -->
+{% if panels %}
+<div class="row g-4">
+    {% for panel in panels %}
+    {% set p_info = panel_details.get(panel.panel_id, {}) %}
+    <div class="col-lg-6">
+        <div class="card-custom h-100 d-flex flex-column justify-content-between">
+            <div>
+                <!-- Panel Header -->
+                <div class="p-4 border-bottom bg-light bg-opacity-50">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge-panel-id fs-6">{{ panel.panel_id }}</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary"><i class="fa-solid fa-location-dot me-1"></i> {{ panel.venue or 'TBA' }}</span>
+                            <form method="POST" action="{{ url_for('delete_panel', panel_id=panel.panel_id) }}" class="d-inline" onsubmit="return confirm('Delete {{ panel.panel_name }} ({{ panel.panel_id }}) and remove its allocations?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger p-1" title="Delete Panel" style="line-height: 1; border: none;">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <h5 class="fw-bold mb-1">{{ panel.panel_name }}</h5>
+                    <p class="text-muted small mb-0">{{ panel.description or 'Evaluation Committee' }}</p>
+                </div>
+
+                <!-- Committee Members (Faculty Allocation per Panel) -->
+                <div class="p-4 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-uppercase small text-muted mb-0">
+                            <i class="fa-solid fa-user-tie text-primary me-1"></i> Evaluation Committee ({{ p_info.faculty|length }})
+                        </h6>
+                        <!-- Button to Allocate Faculty for THIS panel -->
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignFacultyModal{{ panel.panel_id }}">
+                            <i class="fa-solid fa-user-plus me-1"></i> Allocate Faculty
+                        </button>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2">
+                        {% for fac in p_info.faculty %}
+                        <div class="p-2 border rounded-2 bg-white d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-semibold">{{ fac.name }}</span>
+                                <span class="text-muted small ms-2">({{ fac.specialization }})</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge {% if fac.role == 'Chairperson' %}bg-primary{% elif fac.role == 'Panel Mentor' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ fac.role }}
+                                </span>
+                                <!-- Remove Faculty from this Panel -->
+                                <form method="POST" action="{{ url_for('remove_panel_faculty') }}" class="d-inline" onsubmit="return confirm('Remove {{ fac.name }} from {{ panel.panel_id }}?');">
+                                    <input type="hidden" name="panel_id" value="{{ panel.panel_id }}">
+                                    <input type="hidden" name="faculty_id" value="{{ fac.faculty_id }}">
+                                    <button type="submit" class="btn btn-sm text-danger p-0 border-0" title="Remove Faculty from Panel">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-light border small text-muted text-center py-2 mb-0">
+                            No faculty assigned to this panel yet. Click <b>Allocate Faculty</b> above.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Assigned Teams with Mentors -->
+                <div class="p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-uppercase small text-muted mb-0">
+                            <i class="fa-solid fa-users text-success me-1"></i> Assigned Teams & Mentors ({{ p_info.teams|length }})
+                        </h6>
+                        <!-- Button to Assign Team to THIS panel -->
+                        <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#assignTeamModal{{ panel.panel_id }}">
+                            <i class="fa-solid fa-plus me-1"></i> Assign Team
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-custom mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Team ID</th>
+                                    <th>Assigned Mentor</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for team in p_info.teams %}
+                                <tr>
+                                    <td>
+                                        <span class="badge-team-id">{{ team.team_id }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold small">
+                                            <i class="fa-solid fa-chalkboard-user text-primary me-1"></i> {{ team.mentor_name }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if team.status == 'Completed' %}
+                                            <span class="badge bg-success">Reviewed</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Scheduled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <form method="POST" action="{{ url_for('remove_panel_team') }}" class="d-inline" onsubmit="return confirm('Remove team {{ team.team_id }} from {{ panel.panel_id }}?');">
+                                            <input type="hidden" name="panel_id" value="{{ panel.panel_id }}">
+                                            <input type="hidden" name="team_id" value="{{ team.team_id }}">
+                                            <button type="submit" class="btn btn-sm text-danger p-0 border-0" title="Remove Team from Panel">
+                                                <i class="fa-solid fa-trash-can small"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-3 text-muted small">
+                                        No teams assigned to this panel yet. Click <b>Assign Team</b> above or use Auto-Allocate.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal to Allocate Faculty for THIS Panel -->
+    <div class="modal fade" id="assignFacultyModal{{ panel.panel_id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('assign_panel_faculty') }}">
+                    <input type="hidden" name="panel_id" value="{{ panel.panel_id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">
+                            <i class="fa-solid fa-user-plus text-primary me-2"></i> Allocate Faculty to {{ panel.panel_name }}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Select Faculty Member</label>
+                            <select name="faculty_id" class="form-select" required>
+                                <option value="" disabled selected>-- Choose Faculty Member --</option>
+                                {% for f in all_faculty %}
+                                    <option value="{{ f.faculty_id }}">{{ f.name }} ({{ f.faculty_id }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Choose any faculty member to evaluate teams in this panel.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Role in Panel</label>
+                            <select name="role" class="form-select" required>
+                                <option value="Member" selected>Member (Evaluator)</option>
+                                <option value="Chairperson">Chairperson (Committee Lead)</option>
+                                <option value="Panel Mentor">Panel Mentor</option>
+                                <option value="External Expert">External Expert</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-custom">Allocate to {{ panel.panel_id }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal to Assign Team to THIS Panel -->
+    <div class="modal fade" id="assignTeamModal{{ panel.panel_id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('assign_panel_team') }}">
+                    <input type="hidden" name="panel_id" value="{{ panel.panel_id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">
+                            <i class="fa-solid fa-users text-success me-2"></i> Assign Team to {{ panel.panel_name }}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Select Team</label>
+                            <select name="team_id" class="form-select" required>
+                                <option value="" disabled selected>-- Choose Team --</option>
+                                {% for t in all_teams %}
+                                    <option value="{{ t.team_id }}">{{ t.team_id }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-custom">Assign Team</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card-custom">
+    <div class="empty-state py-5">
+        <div class="empty-state-icon"><i class="fa-solid fa-people-roof"></i></div>
+        <h6 class="empty-state-title">No Review Panels Created Yet</h6>
+        <p class="empty-state-text">Create review panels manually or run the automatic allocation to distribute teams and faculty members across panels with mentor coordination.</p>
+        <div class="d-flex justify-content-center gap-2">
+            <button type="button" class="btn btn-outline-custom" data-bs-toggle="modal" data-bs-target="#createPanelModal">
+                <i class="fa-solid fa-plus me-1"></i> Create Panel Manually
+            </button>
+            <button type="button" class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#allocatePanelsModal">
+                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Auto-Allocate Review Panels
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block modals %}
+<!-- Create New Panel Modal -->
+<div class="modal fade" id="createPanelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('create_panel') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-plus text-primary me-2"></i> Create Review Panel
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Panel Identifier (ID)</label>
+                        <input type="text" name="panel_id" class="form-control" placeholder="e.g. PANEL-01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Panel Name</label>
+                        <input type="text" name="panel_name" class="form-control" placeholder="e.g. Review Panel 1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Venue / Location</label>
+                        <input type="text" name="venue" class="form-control" placeholder="e.g. IT Seminar Hall / Lab 3">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Evaluation Committee Details..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Create Panel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-Allocate Panels Modal -->
+<div class="modal fade" id="allocatePanelsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('allocate_panels_route') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i> Auto-Allocate Review Panels
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-primary py-2 small mb-3">
+                        <i class="fa-solid fa-circle-info me-1"></i> Distributes student teams and faculty members across panels as equally as possible, while tracking each team's assigned mentor.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Number of Review Panels</label>
+                        <input type="number" name="num_panels" class="form-control" value="3" min="1" max="10" required>
+                        <div class="form-text">e.g. 3 panels (Panel 1, Panel 2, Panel 3)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Faculty Members Required Per Panel</label>
+                        <input type="number" name="faculty_per_panel" class="form-control" value="3" min="1" max="10" required>
+                        <div class="form-text">e.g. 3 faculty members per panel (1 Chairperson + 2 Members)</div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="avoid_mentor_evaluator" value="1" class="form-check-input" id="avoidMentor" checked>
+                        <label class="form-check-label fw-semibold" for="avoidMentor">
+                            Avoid assigning a team's own mentor as its evaluator (Conflict of Interest prevention)
+                        </label>
+                    </div>
+                    <input type="hidden" name="review_code" value="REV-01">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom">Run Auto-Allocation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

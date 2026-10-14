@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Overview — Smart Mini Project System{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block topbar_actions %}
+    <a href="{{ url_for('students_list') }}" class="btn btn-outline-custom">
+        <i class="fa-solid fa-file-excel me-1 text-success"></i> Upload Excel
+    </a>
+    <a href="{{ url_for('teams_list') }}" class="btn btn-primary-custom">
+        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Form Teams
+    </a>
+{% endblock %}
+
+{% block content %}
+<!-- KPI Stats Row -->
+<div class="row g-4 mb-4">
+    <!-- Students Card -->
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-card-inner">
+                <div>
+                    <div class="stat-label">Total Students</div>
+                    <div class="stat-value">{{ stats.total_students }}</div>
+                    <div class="mt-2 small text-muted">
+                        <span class="text-success fw-bold">{{ stats.grade_a_count }}</span> Grade A &bull; 
+                        <span class="text-warning fw-bold">{{ stats.grade_b_count }}</span> Grade B
+                    </div>
+                </div>
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teams Card -->
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-card-inner">
+                <div>
+                    <div class="stat-label">Teams Formed</div>
+                    <div class="stat-value">{{ stats.total_teams }}</div>
+                    <div class="mt-2 small text-muted">
+                        <span class="badge-team-id">25ITP001 - 25ITP{{ "%03d"|format(stats.total_teams) }}</span>
+                    </div>
+                </div>
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Faculty & Mentors Card -->
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-card-inner">
+                <div>
+                    <div class="stat-label">Faculty & Mentors</div>
+                    <div class="stat-value">{{ stats.total_faculty }}</div>
+                    <div class="mt-2 small text-muted">
+                        <span class="text-primary fw-bold">{{ stats.mentors_allocated }}</span> Mentors Assigned
+                    </div>
+                </div>
+                <div class="stat-icon amber">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Panels Card -->
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="stat-card-inner">
+                <div>
+                    <div class="stat-label">Review Panels</div>
+                    <div class="stat-value">{{ stats.total_panels }}</div>
+                    <div class="mt-2 small text-muted">
+                        <span class="text-success fw-bold">{{ stats.completed_reviews }}</span> Completed &bull; 
+                        <span class="text-danger fw-bold">{{ stats.pending_reviews }}</span> Pending
+                    </div>
+                </div>
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-people-roof"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Role-Specific Dynamic Content -->
+{% if current_role == 'admin' %}
+    <!-- Admin Workflow & Teams Overview -->
+    <div class="row g-4">
+        <!-- Quick Automation Workflow -->
+        <div class="col-lg-12">
+            <div class="card-custom p-4 bg-white">
+                <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-bolt text-warning"></i> Automated Project Lifecycle Workflow
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="badge bg-primary mb-2">Step 1</div>
+                                <h6 class="fw-bold">Student Excel Upload</h6>
+                                <p class="text-muted small mb-3">Upload Grade A & B student lists. Only names are imported; S.No is ignored.</p>
+                            </div>
+                            <a href="{{ url_for('students_list') }}" class="btn btn-sm btn-outline-primary w-100">Go to Students</a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="badge bg-success mb-2">Step 2</div>
+                                <h6 class="fw-bold">Auto Team Formation</h6>
+                                <p class="text-muted small mb-3">Fair distribution of Grade A & B with sequential IDs (25ITP001, etc.).</p>
+                            </div>
+                            <a href="{{ url_for('teams_list') }}" class="btn btn-sm btn-outline-success w-100">Form Teams</a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="badge bg-warning text-dark mb-2">Step 3</div>
+                                <h6 class="fw-bold">Mentor Allocation</h6>
+                                <p class="text-muted small mb-3">Assign faculty mentors based on specialization and balanced workload.</p>
+                            </div>
+                            <a href="{{ url_for('faculty_list') }}" class="btn btn-sm btn-outline-warning w-100">Allocate Mentors</a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="badge bg-info text-dark mb-2">Step 4</div>
+                                <h6 class="fw-bold">Panel & Marks Entry</h6>
+                                <p class="text-muted small mb-3">Form review panels with mentors coordination and enter review scores.</p>
+                            </div>
+                            <a href="{{ url_for('review_panels') }}" class="btn btn-sm btn-outline-info w-100">Configure Panels</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Formed Teams Table -->
+        <div class="col-lg-8">
+            <div class="card-custom">
+                <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-1">Formed Teams & Student Members</h5>
+                        <p class="text-muted small mb-0">Showing latest teams with fair Grade A & B distribution and sequential IDs</p>
+                    </div>
+                    <a href="{{ url_for('teams_list') }}" class="btn btn-sm btn-outline-custom">View All Teams</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>Team ID</th>
+                                <th>Grade Ratio</th>
+                                <th>Assigned Mentor</th>
+                                <th>Student Members (Names Only)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for team in recent_teams %}
+                            <tr>
+                                <td><span class="badge-team-id">{{ team.team_id }}</span></td>
+                                <td>
+                                    <span class="badge-grade-a">A: {{ team.grade_a_count }}</span>
+                                    <span class="badge-grade-b ms-1">B: {{ team.grade_b_count }}</span>
+                                </td>
+                                <td>
+                                    {% if team.mentor_name != 'Unallocated' %}
+                                        <span class="fw-semibold text-primary"><i class="fa-solid fa-user-tie me-1"></i> {{ team.mentor_name }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Unallocated</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small">{{ team.members or 'No members assigned' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    No teams formed yet. Upload student details and click <b>Form Teams</b> to get started.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mentor Meeting & Review Progress -->
+        <div class="col-lg-4">
+            <div class="card-custom p-4 mb-4">
+                <h6 class="fw-bold mb-3 d-flex align-items-center justify-content-between">
+                    <span>Mentor Meetings</span>
+                    <a href="{{ url_for('mentor_meetings') }}" class="small text-primary text-decoration-none">Manage</a>
+                </h6>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small">Completed Meetings</span>
+                    <span class="badge bg-success">{{ stats.completed_meetings }}</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <span class="text-muted small">Pending / Scheduled</span>
+                    <span class="badge bg-warning text-dark">{{ stats.pending_meetings }}</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    {% set total_m = stats.completed_meetings + stats.pending_meetings %}
+                    {% set m_percent = (stats.completed_meetings / total_m * 100) if total_m > 0 else 0 %}
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ m_percent }}%;"></div>
+                </div>
+            </div>
+
+            <div class="card-custom p-4">
+                <h6 class="fw-bold mb-3 d-flex align-items-center justify-content-between">
+                    <span>Download Reports</span>
+                    <a href="{{ url_for('reports_hub') }}" class="small text-primary text-decoration-none">All Reports</a>
+                </h6>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('download_report', format_type='excel', report_name='students') }}" class="btn btn-sm btn-outline-success text-start">
+                        <i class="fa-solid fa-file-excel me-2"></i> Students Directory (Excel)
+                    </a>
+                    <a href="{{ url_for('download_report', format_type='excel', report_name='teams') }}" class="btn btn-sm btn-outline-primary text-start">
+                        <i class="fa-solid fa-file-excel me-2"></i> Team Allocations (Excel)
+                    </a>
+                    <a href="{{ url_for('download_report', format_type='pdf', report_name='panels') }}" class="btn btn-sm btn-outline-danger text-start">
+                        <i class="fa-solid fa-file-pdf me-2"></i> Panels with Mentors (PDF)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% elif current_role == 'mentor' %}
+    <!-- Mentor View: My Assigned Teams & Meetings -->
+    <div class="card-custom">
+        <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold mb-1">My Mentee Teams & Meeting Status</h5>
+                <p class="text-muted small mb-0">Record review feedback, suggestions, and track improvement areas for assigned teams</p>
+            </div>
+            <a href="{{ url_for('mentor_meetings') }}" class="btn btn-primary-custom btn-sm">
+                <i class="fa-solid fa-plus me-1"></i> Log Meeting
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom">
+                <thead>
+                    <tr>
+                        <th>Team ID</th>
+                        <th>Student Members</th>
+                        <th>Meeting Status</th>
+                        <th>Mentor Feedback & Suggestions</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for team in mentor_teams %}
+                    <tr>
+                        <td><span class="badge-team-id">{{ team.team_id }}</span></td>
+                        <td class="small">{{ team.members }}</td>
+                        <td>
+                            {% if team.meeting_status == 'Completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">
+                            {{ team.feedback or 'No feedback recorded yet.' }}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('mentor_meetings') }}" class="btn btn-sm btn-outline-primary">Update</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            No teams allocated to this mentor account yet. (Use Role Switcher or allocate mentors as Admin).
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% elif current_role == 'faculty' %}
+    <!-- Faculty View: My Assigned Panels & Teams to Evaluate -->
+    <div class="card-custom">
+        <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold mb-1">My Evaluation Panels & Assigned Teams</h5>
+                <p class="text-muted small mb-0">Review project criteria, evaluate student demonstrations, and submit marks</p>
+            </div>
+            <a href="{{ url_for('reviews_list') }}" class="btn btn-primary-custom btn-sm">
+                <i class="fa-solid fa-pen-to-square me-1"></i> Review Marksheets
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom">
+                <thead>
+                    <tr>
+                        <th>Team ID</th>
+                        <th>Panel</th>
+                        <th>Review Stage</th>
+                        <th>Assigned Mentor</th>
+                        <th>Evaluation Status</th>
+                        <th>Total Score</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rev in panel_reviews %}
+                    <tr>
+                        <td><span class="badge-team-id">{{ rev.team_id }}</span></td>
+                        <td><span class="badge-panel-id">{{ rev.panel_id }}</span></td>
+                        <td>{{ rev.review_name }}</td>
+                        <td>{{ rev.mentor_name }}</td>
+                        <td>
+                            {% if rev.status == 'Completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if rev.total_score is not none %}
+                                <strong class="text-primary">{{ rev.total_score }} / 100</strong>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('review_marks_sheet', review_code='REV-01') }}" class="btn btn-sm btn-primary-custom">Enter Marks</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            No review panels assigned yet. Configure panels in Admin View.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

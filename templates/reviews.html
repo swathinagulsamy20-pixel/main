@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Review Sheets & Evaluations — Smart Mini Project System{% endblock %}
+{% block page_title %}Project Reviews & Evaluation Criteria{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Reviews Cards -->
+    {% for rev in reviews %}
+    <div class="col-md-4">
+        <div class="card-custom h-100 p-4 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-primary fs-6">{{ rev.review_code }}</span>
+                    <span class="badge bg-light text-dark border">{{ rev.status }}</span>
+                </div>
+                <h4 class="fw-bold mb-2">{{ rev.review_name }}</h4>
+                <p class="text-muted small mb-3">{{ rev.description or 'Official project milestone evaluation.' }}</p>
+
+                <div class="p-3 bg-light rounded-3 mb-3 small">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Maximum Total Marks:</span>
+                        <span class="fw-bold">{{ rev.max_total_marks }} Marks</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Weightage:</span>
+                        <span class="fw-bold">{{ rev.weightage_percent }}%</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Teams Scheduled:</span>
+                        <span class="fw-bold">{{ rev.completed_teams_count }} / {{ rev.scheduled_teams_count }} Completed</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('review_marks_sheet', review_code=rev.review_code) }}" class="btn btn-primary-custom">
+                    <i class="fa-solid fa-pen-ruler me-1"></i> Open Evaluation Sheet & Enter Marks
+                </a>
+                <a href="{{ url_for('download_report', format_type='excel', report_name='review_marks') }}" class="btn btn-sm btn-outline-custom">
+                    <i class="fa-solid fa-file-excel text-success me-1"></i> Export Marks (Excel)
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card-custom empty-state py-5">
+            <div class="empty-state-icon"><i class="fa-solid fa-pen-ruler"></i></div>
+            <h6 class="empty-state-title">No Reviews Created Yet</h6>
+            <p class="empty-state-text">Review 1 will be automatically initialized when Review Panels are allocated.</p>
+            <a href="{{ url_for('review_panels') }}" class="btn btn-primary-custom">Go to Review Panels</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

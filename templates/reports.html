@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Reports Center — Smart Mini Project System{% endblock %}
+{% block page_title %}Reports & Analytics Center{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Student Directory Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card-custom h-100 p-4 d-flex flex-column justify-content-between">
+            <div>
+                <div class="stat-icon blue mb-3">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+                <h5 class="fw-bold mb-1">Student Directory</h5>
+                <p class="text-muted small mb-3">Complete roster of Grade A and Grade B students with assigned Team IDs. Strictly displays student names only without S.No.</p>
+                <div class="badge bg-light text-dark border mb-3">Format: Name &bull; Grade &bull; Team ID</div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('download_report', format_type='excel', report_name='students') }}" class="btn btn-sm btn-outline-success flex-grow-1">
+                    <i class="fa-solid fa-file-excel me-1"></i> Excel (.xlsx)
+                </a>
+                <a href="{{ url_for('download_report', format_type='pdf', report_name='students') }}" class="btn btn-sm btn-outline-danger flex-grow-1">
+                    <i class="fa-solid fa-file-pdf me-1"></i> PDF (.pdf)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Formations Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card-custom h-100 p-4 d-flex flex-column justify-content-between">
+            <div>
+                <div class="stat-icon green mb-3">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h5 class="fw-bold mb-1">Team Formations & Members</h5>
+                <p class="text-muted small mb-3">Formed student teams with official Team IDs (25ITP001...), fair Grade A & B ratios, leader designations, and allocated mentors.</p>
+                <div class="badge bg-light text-dark border mb-3">Format: Team ID &bull; Members &bull; Mentor</div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('download_report', format_type='excel', report_name='teams') }}" class="btn btn-sm btn-outline-success flex-grow-1">
+                    <i class="fa-solid fa-file-excel me-1"></i> Excel (.xlsx)
+                </a>
+                <a href="{{ url_for('download_report', format_type='pdf', report_name='teams') }}" class="btn btn-sm btn-outline-danger flex-grow-1">
+                    <i class="fa-solid fa-file-pdf me-1"></i> PDF (.pdf)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Faculty & Specializations Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card-custom h-100 p-4 d-flex flex-column justify-content-between">
+            <div>
+                <div class="stat-icon amber mb-3">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <h5 class="fw-bold mb-1">Faculty & Specializations</h5>
+                <p class="text-muted small mb-3">Faculty directory containing unique Faculty IDs (FAC001...), areas of specialization, and current mentoring workload vs capacity.</p>
+                <div class="badge bg-light text-dark border mb-3">Format: Faculty ID &bull; Specialization &bull; Mentees</div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('download_report', format_type='excel', report_name='faculty') }}" class="btn btn-sm btn-outline-success flex-grow-1">
+                    <i class="fa-solid fa-file-excel me-1"></i> Excel (.xlsx)
+                </a>
+                <a href="{{ url_for('download_report', format_type='excel', report_name='faculty') }}" class="btn btn-sm btn-outline-danger flex-grow-1">
+                    <i class="fa-solid fa-file-excel me-1"></i> Export Data
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Panels & Mentors Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card-custom h-100 p-4 d-flex flex-column justify-content-between">
+            <div>
+                <div class="stat-icon purple mb-3">
+                    <i class="fa-solid fa-people-roof"></i>
+                </div>
+                <h5 class="fw-bold mb-1">Review Panels & Mentors</h5>
+                <p class="text-muted small mb-3">Review panel allocations with evaluation committee members, venues, assigned student teams, and each team's designated mentor.</p>
+                <div class="badge bg-light text-dark border mb-3">Format: Panel ID &bull; Committee &bull; Teams & Mentors</div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('download_report', format_type='excel', report_name='panels') }}" class="btn btn-sm btn-outline-success flex-grow-1">
+                    <i class="fa-solid fa-file-excel me-1"></i> Excel (.xlsx)
+                </a>
+                <a href="{{ url_for('download_report', format_type='pdf', report_name='panels') }}" class="btn btn-sm btn-outline-danger flex-grow-1">
+                    <i class="fa-solid fa-file-pdf me-1"></i> PDF (.pdf)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Sheets & Marks Report -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card-custom h-100 p-4 d-flex flex-column justify-content-between">
+            <div>
+                <div class="stat-icon blue mb-3">
+                    <i class="fa-solid fa-pen-ruler"></i>
+                </div>
+                <h5 class="fw-bold mb-1">Review Marks & Scores</h5>
+                <p class="text-muted small mb-3">Official review marksheets including team scores, evaluation status, assigned mentors, and panel faculty feedback remarks.</p>
+                <div class="badge bg-light text-dark border mb-3">Format: Team ID &bull; Total Marks &bull; Remarks</div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('download_report', format_type='excel', report_name='review_marks') }}" class="btn btn-sm btn-outline-success flex-grow-1">
+                    <i class="fa-solid fa-file-excel me-1"></i> Excel (.xlsx)
+                </a>
+                <a href="{{ url_for('download_report', format_type='pdf', report_name='review_marks') }}" class="btn btn-sm btn-outline-danger flex-grow-1">
+                    <i class="fa-solid fa-file-pdf me-1"></i> PDF (.pdf)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database SQL Backup -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card-custom h-100 p-4 d-flex flex-column justify-content-between">
+            <div>
+                <div class="stat-icon green mb-3">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+                <h5 class="fw-bold mb-1">Database Backup (.sql)</h5>
+                <p class="text-muted small mb-3">Export a full SQL dump of all MySQL tables and records. Useful for offline storage, backups, and data migration.</p>
+                <div class="badge bg-light text-dark border mb-3">Format: Complete SQL Script (.sql)</div>
+            </div>
+            <div class="d-grid">
+                <a href="{{ url_for('backup_db') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fa-solid fa-download me-1"></i> Download Database SQL Dump
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
